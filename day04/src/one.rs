@@ -62,14 +62,6 @@ impl ScratchCard {
             }
         })
     }
-
-    fn winners(&self) -> Vec<u128> {
-        self.scratch
-            .iter()
-            .filter(|x| self.winning.contains(x))
-            .map(|x| *x)
-            .collect::<Vec<u128>>()
-    }
 }
 
 fn main() {
@@ -83,46 +75,15 @@ fn main() {
         Some(file_path) => {
             if let Ok(reader) = read_lines(file_path) {
                 let mut accumulator = 0u128;
-                let mut cards: Vec<u128> = vec![];
-                let mut value: Vec<u128> = vec![];
-
-                for (index, line) in reader.enumerate() {
+                for line in reader {
                     if let Ok(line) = line {
                         println!("{:?}", line);
                         let card = ScratchCard::from_str(&line).expect("ScratchCard not parsed");
-
-                        // add initial card
-                        if let Some(amount) = cards.get(index) {
-                            cards[index] = amount + 1;
-                        } else {
-                            cards.push(1);
-                        }
-
-                        // current cards value
-                        let all_cards_value = cards[index] * card.value();
-
-                        // get won cards
-                        let winners = card.winners();
-
-                        let num_cards = cards[index];
-                        for _ in 0..num_cards {
-                            for (win_index, _) in winners.iter().enumerate() {
-                                if let Some(amount) = cards.get(index + win_index + 1) {
-                                    cards[index + win_index + 1] = amount + 1;
-                                } else {
-                                    cards.push(1);
-                                }
-                            }
-                        }
-
-                        println!("{} winners: {}", card.card, winners.len());
-                        println!("{} total val: {}", card.card, all_cards_value);
-                        println!("cards: {:?}", cards);
-                        accumulator += all_cards_value;
+                        println!("{} => {}", card.card, card.value());
+                        accumulator += card.value();
                     }
                 }
-                println!("Total Value: {}", accumulator);
-                println!("Total Cards: {}", cards.iter().sum::<u128>());
+                println!("Total: {}", accumulator);
             }
         }
     }
