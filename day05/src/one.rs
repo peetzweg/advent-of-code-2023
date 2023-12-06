@@ -1,4 +1,3 @@
-use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
@@ -148,48 +147,32 @@ fn main() {
                     .skip(1)
                     .map(|v| v.parse::<u128>().expect("Seed should be numbers"))
                     .collect::<Vec<u128>>();
-                println!("Seeds: {:?}", seeds);
 
-                seeds
-                    .par_chunks(2)
-                    .map(|w| {
-                        println!("{}/{}", w[0], w[1]);
-                        w[0]
+                let mut locations = seeds
+                    .iter()
+                    .map(|s| {
+                        let mut map = maps.get("seed");
+                        let mut source = s.to_owned();
+                        println!("---Seed: {}---", source);
+                        while map.is_some() {
+                            let (destination, current_map) = map.unwrap();
+
+                            println!(
+                                "{}({})\t->\t{}({})",
+                                current_map.source_label,
+                                source,
+                                current_map.destination_label,
+                                current_map.resolve(&source)
+                            );
+
+                            source = current_map.resolve(&source);
+                            map = maps.get(destination)
+                        }
+                        source
                     })
                     .collect::<Vec<u128>>();
-
-                let good_locations = seeds
-                    .par_chunks(2)
-                    .map(|w| {
-                        println!("{}/{}", w[0], w[1]);
-                        w[0]..w[0] + w[1]
-                    })
-                    .map(|r| {
-                        r.map(|s| {
-                            let mut map = maps.get("seed");
-                            let mut source = s.to_owned();
-                            // println!("---Seed: {}---", source);
-                            while map.is_some() {
-                                let (destination, current_map) = map.unwrap();
-
-                                // println!(
-                                //     "{}({})\t->\t{}({})",
-                                //     current_map.source_label,
-                                //     source,
-                                //     current_map.destination_label,
-                                //     current_map.resolve(&source)
-                                // );
-
-                                source = current_map.resolve(&source);
-                                map = maps.get(destination)
-                            }
-                            source
-                        })
-                        .fold(u128::MAX, |a, v| if v < a { v } else { a })
-                    })
-                    .collect::<Vec<u128>>();
-
-                println!("{:?}", good_locations)
+                locations.sort();
+                println!("{:?}", locations)
             }
         }
     }
