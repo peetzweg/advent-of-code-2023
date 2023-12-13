@@ -49,8 +49,6 @@ impl Ord for Player {
 
 impl PartialOrd for Player {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-
-
         let values = [self, other].map(|e| e.hand.value());
         // check value
         let outcome = match values {
@@ -70,13 +68,10 @@ impl PartialOrd for Player {
             m.insert('K',4);
             m.insert('A',5);
 
-
             let pairs = self.raw_hand.chars().zip(other.raw_hand.chars());
             for pair in pairs {
                 match pair {
                     (a,b) if a ==b =>{}
-                    (a,_) if a =='J'=> {return  Some(Ordering::Less);}
-                    (_,b) if b =='J'=> {return  Some(Ordering::Greater);}
                     (a, b) if a.is_alphabetic() && b.is_numeric() => {
                         return Some(Ordering::Greater);
                     }
@@ -125,19 +120,16 @@ fn main() {
 
                 for line in reader {
                     if let Ok(line) = line {
-                        if !line.is_empty(){
-                            let mut line = line.split(" ");
-                            let raw_hand = line.next().unwrap();
-                            let bid = line.next().unwrap().parse::<usize>().expect("Bid not NaN");
-                            let hand = Hand::from_string(raw_hand);
+                        let mut line = line.split(" ");
+                        let raw_hand = line.next().unwrap();
+                        let bid = line.next().unwrap().parse::<usize>().expect("Bid not NaN");
+                        let hand = Hand::from_string(raw_hand);
 
-                            game.push(Player {
-                                raw_hand: raw_hand.to_string(),
-                                bid,
-                                hand,
-                            })
-                        }
-
+                        game.push(Player {
+                            raw_hand: raw_hand.to_string(),
+                            bid,
+                            hand,
+                        })
                     }
                 }
 
@@ -166,18 +158,15 @@ where
 }
 
 fn hand_value(hand: &str) -> Hand {
-    let cards = hand.chars().filter(|c| c!= &'J').collect::<Vec<char>>();
+    let cards = hand.chars().collect::<Vec<char>>();
     let mut map: HashMap<char, usize> = HashMap::new();
 
-
-    println!("cards: {:?}",cards);
     for card in &cards {
         if !map.contains_key(&card) {
             let count = cards.iter().filter(|c| c == &card).count();
             map.insert(card.clone(), count);
         }
     }
-    println!("map: {:?}",map);
 
     let mut identical = map
         .iter()
@@ -185,27 +174,21 @@ fn hand_value(hand: &str) -> Hand {
         .collect::<Vec<&usize>>();
     identical.sort();
     identical.reverse();
-    let jokers = hand.chars().filter(|c|c == &'J').count();
 
-
-
-
-    println!("{:?}, {:?}",cards, jokers);
-    let first_pair = (*identical.get(0).unwrap_or(&&0usize) + jokers, identical.get(1));
-    println!("{:?}",first_pair);
+    let first_pair = (identical.get(0), identical.get(1));
 
     match first_pair {
-        (5, _) => Hand::FiveOfAKind,
+        (Some(5), None) => Hand::FiveOfAKind,
 
-        (4, _) => Hand::FourOfAKind,
+        (Some(4), _) => Hand::FourOfAKind,
 
-        (3, Some(2)) => Hand::FullHouse,
+        (Some(3), Some(2)) => Hand::FullHouse,
 
-        (3, _) => Hand::ThreeOfAKind,
+        (Some(3), _) => Hand::ThreeOfAKind,
 
-        (2, Some(2)) => Hand::TwoPair,
+        (Some(2), Some(2)) => Hand::TwoPair,
 
-        (2, _) => Hand::OnePair,
+        (Some(2), _) => Hand::OnePair,
         _ => Hand::HighCard,
     }
 }
@@ -222,17 +205,5 @@ mod test {
         assert_eq!(Hand::ThreeOfAKind, hand_value("2223K"));
         assert_eq!(Hand::TwoPair, hand_value("3223K"));
         assert_eq!(Hand::OnePair, hand_value("32T3K"));
-    }
-
-    #[test]
-    fn test_hand_value_joker() {
-        assert_eq!(Hand::FiveOfAKind, hand_value("J3JJ3"));
-        assert_eq!(Hand::FullHouse, hand_value("22J33"));
-        assert_eq!(Hand::FourOfAKind, hand_value("22JJ3"));
-        assert_eq!(Hand::FiveOfAKind, hand_value("22JJJ"));
-        assert_eq!(Hand::OnePair, hand_value("2345J"));
-        assert_eq!(Hand::ThreeOfAKind, hand_value("23J5J"));
-        assert_eq!(Hand::FiveOfAKind, hand_value("JJJJJ"));
-
     }
 }
