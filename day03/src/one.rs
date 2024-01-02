@@ -33,11 +33,10 @@ fn main() {
                             // if c is a number
                             '0'..='9' => {}
                             '.' => {}
-                            '*' => {
+                            _ => {
                                 println!("Symbol: {},({},{})", c, x, y);
                                 accumulator += get_adjacent_sum(&mut map, x, y);
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -56,50 +55,54 @@ fn main() {
 }
 
 fn get_adjacent_sum(map: &mut Vec<Vec<char>>, x: usize, y: usize) -> u128 {
-    let mut values: Vec<u128> = vec![];
+    let line = map.iter().nth(y).unwrap();
+    let mut accumulator = 0u128;
 
     // top
     if let Some(top) = map.get_mut(y - 1) {
         // left
-        values.push(consume(top, x - 1));
-
+        let value = consume(top, x - 1);
+        // println!("value: {}", value);
+        accumulator += value;
         // middle
-        values.push(consume(top, x));
-
+        let value = consume(top, x);
+        // println!("value: {}", value);
+        accumulator += value;
         // right
-        values.push(consume(top, x + 1));
+        let value = consume(top, x + 1);
+        // println!("value: {}", value);
+        accumulator += value;
     }
 
     // middle
     if let Some(top) = map.get_mut(y) {
         // left
-        values.push(consume(top, x - 1));
+        let value = consume(top, x - 1);
+        // println!("middle value: {}", value);
+        accumulator += value;
 
         // right
-        values.push(consume(top, x + 1));
+        let value = consume(top, x + 1);
+        // println!("middle value: {}", value);
+        accumulator += value;
     }
 
     if let Some(bottom) = map.get_mut(y + 1) {
         // left
-        values.push(consume(bottom, x - 1));
-
+        let value = consume(bottom, x - 1);
+        // println!("value: {}", value);
+        accumulator += value;
         // middle
-        values.push(consume(bottom, x));
-
+        let value = consume(bottom, x);
+        // println!("value: {}", value);
+        accumulator += value;
         // right
-        values.push(consume(bottom, x + 1));
+        let value = consume(bottom, x + 1);
+        // println!("value: {}", value);
+        accumulator += value;
     }
 
-    let values = values
-        .iter()
-        .filter(|v| v > &&0u128)
-        .collect::<Vec<&u128>>();
-    println!("{:?}", values);
-    if values.len() == 2 {
-        values[0] * values[1]
-    } else {
-        0u128
-    }
+    accumulator
 }
 
 fn consume(line: &mut Vec<char>, x: usize) -> u128 {

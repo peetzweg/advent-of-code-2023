@@ -1,14 +1,11 @@
 use core::fmt;
-use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use rayon::iter::IntoParallelRefIterator;
-
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Junction {
     name: String,
     left: String,
@@ -50,8 +47,6 @@ fn main() {
                 );
 
                 let mut mapping = HashMap::<String, Junction>::new();
-                let mut all_junctions = Vec::<Junction>::new();
-                let mut currents = Vec::<&Junction>::new();
 
                 for line in reader {
                     if let Ok(line) = line {
@@ -59,44 +54,35 @@ fn main() {
                             continue;
                         }
                         let j = Junction::from_string(&line);
-                        println!("{}", &j);
-                        mapping.insert(j.name.clone(), j.clone());
 
-                        all_junctions.push(j.clone());
+                        println!("{}", &j);
+                        mapping.insert(j.name.clone(), j);
                     }
                 }
 
-                // find the starting junctions
-                currents = all_junctions
-                    .iter()
-                    .filter(|j| j.name.ends_with("A"))
-                    .collect();
-
-                println!("starts: {:?}", currents);
+                println!("{:?}", mapping);
 
                 // walk the instructions
-
+                let mut current = mapping.get("AAA").unwrap();
                 let mut instruction_cycle = instructions.0.chars().cycle();
-                let mut steps: u128 = 0;
+                let mut steps = 0;
 
-                while !all_ended(&currents) {
+                while current.name != "ZZZ" {
                     let instruction = instruction_cycle.next().expect("Should yield instruction");
-                    let updated_currents: Vec<_> = currents
-                        .par_iter()
-                        .map(|current| match instruction {
-                            'L' => mapping.get(&current.left).unwrap(),
-                            'R' => mapping.get(&current.right).unwrap(),
-                            _ => panic!("Unknown instruction {}", instruction),
-                        })
-                        .collect();
-
-                    currents = updated_currents.iter().map(|j| *j).collect();
-
-                    steps += 1;
-                    if steps % 10000 == 0 {
-                        println!("Steps: {}", steps);
+                    match instruction {
+                        'L' => {
+                            current = mapping.get(&current.left).unwrap();
+                        }
+                        'R' => {
+                            current = mapping.get(&current.right).unwrap();
+                        }
+                        _ => {
+                            panic!("Unknown instruction {}", instruction);
+                        }
                     }
+                    steps += 1;
                 }
+
                 println!("Steps: {}", steps);
             }
         }
@@ -104,12 +90,6 @@ fn main() {
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
-}
-
-fn all_ended(junctions: &Vec<&Junction>) -> bool {
-    junctions
-        .iter()
-        .all(|junction| junction.name.ends_with("Z"))
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
